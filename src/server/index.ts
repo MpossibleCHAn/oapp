@@ -4,7 +4,7 @@ import fs from "fs/promises";
 import { paths } from "../utils/common";
 import * as React from "react";
 import ReactDOMServer from "react-dom/server";
-import Home from "../client/Home";
+import Home from "../client/pages/Home";
 import registerWs from "../server/websocket";
 import compose from "./compose";
 import error from "./middlewares/error";

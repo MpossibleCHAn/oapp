@@ -13,7 +13,7 @@ export default function html(): Koa.Middleware {
 				return
 		}
 		const html = await fs.readFile(path.resolve(paths.src, "index.html"))
-		console.log(html);
+		console.log(html.toString());
 		console.log(ctx.url);
 		ctx.type = "text/html"
 		ctx.body = html
