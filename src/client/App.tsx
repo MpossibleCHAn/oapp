@@ -1,4 +1,5 @@
 import * as React from "react";
+import Home from "./Home";
 import { Nav } from "./Nav";
 
 const App = () => {
@@ -7,6 +8,7 @@ const App = () => {
   return (
     <div>
       <Nav />
+      <Home />
     </div>
   );
 };

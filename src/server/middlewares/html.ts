@@ -5,6 +5,7 @@ import { paths } from './../../utils/common';
 
 export default function html(): Koa.Middleware {
   return async (ctx, next) => {
+		console.log(ctx);
 		if (ctx.url.startsWith("/client/")) {
 			  const filePaths = ctx.url.split("/");
 				const file = await fs.readFile(path.resolve(paths.dist, "client", filePaths[filePaths.length - 1],))
