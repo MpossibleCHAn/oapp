@@ -9,11 +9,12 @@ import registerWs from "../server/websocket";
 import compose from "./compose";
 import error from "./middlewares/error";
 import html from "./middlewares/html";
+import logger from "./middlewares/logger";
 
 const PORT = process.env.PORT || "3010";
 
 const server = new Koa();
-const middlewares = [error(), html()];
+const middlewares = [error(), logger(), html()];
 server.use(compose(middlewares));
 
 // server.use(async (ctx) => {

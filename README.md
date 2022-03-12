@@ -1,15 +1,19 @@
 # oapp
 
-fullstack app
+Fullstack app
 
-TODO
+### TODO
 
-1. client bundle
-2. server support more middlewares
-3. replace oapp-cli with cli folder
-4. oapp-cli support more bundle function
-5. React ssr
-6. webworker
-7. websocket
-8. route file system
-9. wams
+> Client
+
+1. bundle
+2. React ssr
+3. web worker
+4. websocket
+5. file system route
+6. wams
+
+> Server
+
+1. support more middlewares
+2. React ssr

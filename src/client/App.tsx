@@ -1,24 +1,20 @@
 import * as React from "react";
 import Home from "./pages/Home";
 import { Nav } from "./pages/Nav";
+import * as Comlink from "comlink"
+import useWebWorker from "./hooks/useWebWorker";
 
 const App = () => {
-  const [count, setCount] = React.useState(0);
+  // const [count, setCount] = React.useState(0);
 
+  const count = useWebWorker()
 
-  React.useEffect(() => {
-    const worker = new Worker("/client/worker.js")
-    console.log(worker);
-    worker.postMessage("hihihihi")
-    worker.onmessage = (e => {
-      console.log(e);
-    })
-  }, [])
 
   return (
     <div>
-      <Nav />
-      <Home />
+      count: {count}
+      {/* <Nav />
+      <Home /> */}
     </div>
   );
 };

@@ -1,5 +1,11 @@
+import * as Comlink from "comlink"
+import { workerExports } from "./hooks/useWebWorker";
 
-onmessage = function(e: MessageEvent) {
-	console.log(e);
-	postMessage("hello")
+const data: workerExports ={
+	count: 99,
+	increate: (count: number) => {
+		console.log(count);
+		return count + 10
+	}
 }
+Comlink.expose(data)

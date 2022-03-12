@@ -6,6 +6,7 @@ specifiers:
   '@types/node': ^17.0.21
   '@types/react': ^17.0.39
   '@types/react-dom': ^17.0.13
+  comlink: ^4.3.1
   date-fns: ^2.28.0
   esbuild: ^0.14.25
   fastify: ^3.27.2
@@ -25,6 +26,7 @@ specifiers:
 
 dependencies:
   '@hapi/boom': 9.1.4
+  comlink: 4.3.1
   date-fns: 2.28.0
   esbuild: 0.14.25
   fastify: 3.27.4
@@ -457,6 +459,10 @@ packages:
   /color-name/1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
     dev: true
+
+  /comlink/4.3.1:
+    resolution: {integrity: sha512-+YbhUdNrpBZggBAHWcgQMLPLH1KDF3wJpeqrCKieWQ8RL7atmgsgTQko1XEBK6PsecfopWNntopJ+ByYG1lRaA==}
+    dev: false
 
   /commander/9.0.0:
     resolution: {integrity: sha512-JJfP2saEKbQqvW+FI93OYUB4ByV5cizMpFMiiJI8xDbBvQvSkIk0VvQdn1CZ8mqAO8Loq2h0gYTYtDFUZUeERw==}

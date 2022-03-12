@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@hapi/boom": "^9.1.4",
+    "comlink": "^4.3.1",
     "date-fns": "^2.28.0",
     "esbuild": "^0.14.25",
     "fastify": "^3.27.2",
