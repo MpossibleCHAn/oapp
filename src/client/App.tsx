@@ -18,6 +18,14 @@ const App = () => {
       path: "/users",
       page: () => import("./pages/Users"),
     },
+    {
+      path: "/flame",
+      page: () => import("./pages/FlameGraph/Flame"),
+    },
+    {
+      path: "/flamegraph",
+      page: () => import("./pages/FlameGraph/FlamePage")
+    }
   ];
 
   console.log(routes);
