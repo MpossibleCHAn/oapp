@@ -1,19 +1,19 @@
-import { FlameNode } from './types';
 import * as React from 'react';
-import { useFlamegraphViewConfig } from './FlamegraphContext';
 import { findValueBisect } from './utils';
+import { CanvasRendererProps, FlameNode } from './types';
 import { Color, FontSize, Sizes } from './style';
 
 export const ELLIPSIS = '\u2026';
+const FONT_FAMILY = 'Roboto Mono';
+const MIN_FRAME_TO_RENDER = 8;
 
-interface useDrawTextProps {
-  ctx: CanvasRenderingContext2D;
-}
-
-function useDrawText(ctx: CanvasRenderingContext2D) {
-  const { ratio } = useFlamegraphViewConfig();
+function useDrawText(
+  ctx: CanvasRenderingContext2D,
+  props: CanvasRendererProps
+) {
+  const { ratio } = props;
   const textWidthCache = useCacheMeasureTextWidth(ctx, ratio);
-  const minWidth = textWidthCache('M' + ELLIPSIS + 'M');
+  const minWidthToRender = textWidthCache('M' + ELLIPSIS + 'M');
 
   // Trim text to fit within the given number of pixels on the canvas
   const trimTextMid = React.useCallback(
@@ -29,7 +29,7 @@ function useDrawText(ctx: CanvasRenderingContext2D) {
       );
       return buildTrimmedText(text, lo);
     },
-    []
+    [textWidthCache]
   );
   const drawText = React.useCallback(
     (
@@ -38,19 +38,22 @@ function useDrawText(ctx: CanvasRenderingContext2D) {
     ) => {
       const { name, position } = node;
       const width = textWidthCache(name);
-      if (!width || width < minWidth) {
+      const frameWidth = Math.floor(
+        position[1][0] - position[0][0] - Sizes.LabelPaddingX * 4 * ratio
+      );
+      if (
+        !width ||
+        width < minWidthToRender ||
+        frameWidth < MIN_FRAME_TO_RENDER
+      ) {
         return;
       }
       if (beforeDraw) {
         beforeDraw(ctx, node);
       }
-      const trimedText = trimTextMid(
-        name,
-        Math.floor(
-          position[1][0] - position[0][0] - Sizes.LabelPaddingX * 4 * ratio
-        )
-      );
-      ctx.font = `400 ${FontSize.LABEL * ratio}px Roboto`;
+      const trimedText = trimTextMid(name, frameWidth);
+      // ctx.font = `800 ${FontSize.LABEL * ratio}px "Mono" Roboto`;
+      ctx.font = `400 ${FontSize.LABEL * ratio}px ${FONT_FAMILY}`;
       ctx.fillStyle = Color.Label;
       ctx.fillText(
         trimedText.trimmedString,
@@ -58,7 +61,7 @@ function useDrawText(ctx: CanvasRenderingContext2D) {
         position[0][1] + Sizes.LabelVerticalOffset * ratio
       );
     },
-    [ctx, ratio, textWidthCache, trimTextMid]
+    [ctx, minWidthToRender, ratio, textWidthCache, trimTextMid]
   );
 
   return drawText;
@@ -76,7 +79,7 @@ export function useCacheMeasureTextWidth(
       measureTextCache.clear();
     }
     prevRatio.current = ratio;
-  }, [ratio]);
+  }, [measureTextCache, ratio]);
 
   return React.useCallback(
     (text: string) => {
@@ -85,7 +88,7 @@ export function useCacheMeasureTextWidth(
       }
       return measureTextCache.get(text) as number;
     },
-    [ctx]
+    [ctx, measureTextCache]
   );
 }
 
@@ -115,7 +118,7 @@ export function buildTrimmedText(
     };
   }
 
-  let prefixLength = Math.floor(length / 2);
+  const prefixLength = Math.floor(length / 2);
   const suffixLength = length - prefixLength - 1;
   const prefix = text.substring(0, prefixLength);
   const suffix = text.substring(text.length - suffixLength);
@@ -130,28 +133,5 @@ export function buildTrimmedText(
     originalLength: text.length,
   };
 }
-
-// Trim text to fit within the given number of pixels on the canvas
-// export function trimTextMid(
-//   ctx: CanvasRenderingContext2D,
-//   text: string,
-//   maxWidth: number
-// ): TrimmedTextResult {
-//   if (cachedMeasureTextWidth(ctx, text) <= maxWidth) {
-//     return buildTrimmedText(text, text.length);
-//   }
-//   const [lo] = findValueBisect(
-//     0,
-//     text.length,
-//     (n) => {
-//       return cachedMeasureTextWidth(
-//         ctx,
-//         buildTrimmedText(text, n).trimmedString
-//       );
-//     },
-//     maxWidth
-//   );
-//   return buildTrimmedText(text, lo);
-// }
 
 export default useDrawText;

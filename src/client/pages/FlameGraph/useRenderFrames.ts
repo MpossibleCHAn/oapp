@@ -1,23 +1,22 @@
 import * as React from 'react';
-import { Color } from './style';
-import { CanvasRendererProps } from './types';
+import useDrawText from './useDrawText';
 import { generateColor, hashEntry } from './utils';
+import { CanvasRendererProps } from './types';
+import { Color } from './style';
 
 function useRenderFrames(props: CanvasRendererProps) {
-  console.log(props);
-
-  const { data, framesCanvas, ratio, canvasWidth } = props;
-  const ctx = React.useMemo(
+  const { data, framesCanvas, ratio } = props;
+  const ctx: CanvasRenderingContext2D = React.useMemo(
     () => framesCanvas.getContext('2d'),
     [framesCanvas]
   );
+  const drawText = useDrawText(ctx, props);
 
   const renderFrames = React.useCallback(() => {
     if (!ctx) return;
 
     for (const node of data) {
       const { name, position } = node;
-
       const rectColor = generateColor(hashEntry(name));
       ctx.fillStyle = rectColor;
       ctx.fillRect(
@@ -34,8 +33,9 @@ function useRenderFrames(props: CanvasRendererProps) {
         position[1][0] - position[0][0],
         position[1][1] - position[0][1]
       );
+      drawText(node);
     }
-  }, [ctx, data, ratio, canvasWidth]);
+  }, [ctx, data, drawText, ratio]);
 
   return renderFrames;
 }

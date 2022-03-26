@@ -22,7 +22,7 @@ export function useHierarchy(
   options?: HierarchyOptions
 ): {
   nodes: FlameNode[];
-  height: number;
+  depth: number;
 } {
   const maxDepthRef = React.useRef(0);
   const getValue = React.useCallback((node: [FlameRawTreeNode, number]) => {
@@ -30,13 +30,11 @@ export function useHierarchy(
       return options?.getValue(node);
     }
     return node[1];
-  }, []);
+  }, [options]);
+  const [entryMap] = React.useState(new Map<string, number>())
 
   const nodes: FlameBaseNode[] = React.useMemo(() => {
-    function hierarchy(
-      tree: FlameRawTreeNode,
-      depth: number = 0
-    ): FlameBaseNode[] {
+    function hierarchy(tree: FlameRawTreeNode, depth = 0): FlameBaseNode[] {
       const nodes: FlameBaseNode[] = [];
       for (const [entry, data] of Object.entries(tree)) {
         const [next, cumulative] = data;
@@ -48,8 +46,14 @@ export function useHierarchy(
           cumulative,
           _meta: tree,
         };
+        if (!entryMap.has(entry)) {
+          entryMap.set(entry, 1)
+        }
+        const entryFlag = entryMap.get(entry) as number
+        entryMap.set(entry, entryFlag + 1)
+
         const node = {
-          id: entry + '__' + depth,
+          id: entry + '__' + depth + '__' + entryFlag,
           name: entry,
           data: nodeData,
           value: getValue([next, cumulative]),
@@ -62,7 +66,7 @@ export function useHierarchy(
       return nodes;
     }
     return hierarchy(data);
-  }, [data, getValue]);
+  }, [data, entryMap, getValue]);
 
   const nodesWithPosition = React.useMemo(() => {
     // Calculate node position
@@ -81,8 +85,8 @@ export function useHierarchy(
           (prev, curr) => (prev += curr.value),
           0
         );
-        let x0 = parentPosition[0][0],
-          x1 = parentPosition[1][0];
+        let x0 = parentPosition[0][0];
+        const x1 = parentPosition[1][0];
         const len = x1 - x0;
         for (const node of sortedNodes) {
           const x = (node.value / total) * len;
@@ -108,7 +112,7 @@ export function useHierarchy(
 
   return {
     nodes: nodesWithPosition,
-    height: maxDepthRef.current,
+    depth: maxDepthRef.current,
   };
 }
 

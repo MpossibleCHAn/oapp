@@ -29,7 +29,7 @@ const FlamegraphContainer = (props: FlamegraphContainerProps) => {
   const ctx = React.useMemo(() => canvasRef.current?.getContext('2d'), []);
   console.log(ctx);
 
-  const drawText = ctx && useDrawText(ctx)
+  const drawText = ctx && useDrawText(ctx);
 
   // const cacheMeasureTextWidth = useCacheMeasureTextWidth(
   //   canvasRef.current?.getContext('2d'),
@@ -75,7 +75,7 @@ const FlamegraphContainer = (props: FlamegraphContainerProps) => {
         );
       }
       if (drawText) {
-        drawText(node)
+        drawText(node);
       }
       // const trimedText = trimTextMid(
       //   ctx,

@@ -14,7 +14,7 @@ export interface FlameNodeData {
 }
 
 export interface FlameBaseNode {
-  id: string
+  id: string;
   name: string;
   data: FlameNodeData;
   value: number;
@@ -30,36 +30,48 @@ export interface FlameCanvasRendererProps {
   // spaceBriefsSourceMessagePort: MessagePort;
   // entitiesCanvas: OffscreenCanvas;
   // canvas: OffscreenCanvas;
-  canvas: CanvasRenderingContext2D
+  canvas: CanvasRenderingContext2D;
   // foregroundCanvas: OffscreenCanvas;
   ratio: number;
   /** canvas 实际显示的宽度（canvas 画布宽度需乘以 ratio） */
   canvasDisplayWidth: number;
   canvasDisplayHeight: number;
 
-	nodes: FlameNode[]
+  nodes: FlameNode[];
 }
-
 
 export interface CanvasRendererProps {
   /** phycical position node */
-  data: FlameNode[]
+  data: FlameNode[];
   /** frames layer */
-  framesCanvas: OffscreenCanvas,
-  /** side effect layer, such as hover, fouse */
-  effectCanvas: OffscreenCanvas
+  framesCanvas: OffscreenCanvas;
+  /** side effect layer, such as hover, fouse, selected etc */
+  effectCanvas: OffscreenCanvas;
   /** mouse event layer */
-  foregroundCanvas: OffscreenCanvas
+  foregroundCanvas: OffscreenCanvas;
 
-  ratio: number
-  canvasWidth: number,
-  canvasHeight: number,
+  ratio: number;
+  width: number;
+  height: number;
   /** canvas 实际显示的宽度（canvas 画布宽度需乘以 ratio） */
   // canvasDisplayWidth: number;
   // canvasDisplayHeight: number;
 }
+
+export interface CanvasRendererHandle {
+  onPointerMove: (position: Vec2) => void
+  onPointerDown: (position: Vec2) => void
+  onPointerOut: () => void
+}
+
+export type CanvasRendererSubscriber = {
+  type: 'handle';
+  cb: (handle: CanvasRendererHandle) => void;
+};
+
 export interface FlameCanvasRendererExports {
-  init: (props: CanvasRendererProps) => void
-  updateProps: (updator: Partial<CanvasRendererProps>) => void
-  destory: () => void
+  init: (props: CanvasRendererProps) => void;
+  updateProps: (updator: Partial<CanvasRendererProps>) => void;
+  subscribe: (subscriber: CanvasRendererSubscriber) => Promise<void>;
+  destory: () => void;
 }

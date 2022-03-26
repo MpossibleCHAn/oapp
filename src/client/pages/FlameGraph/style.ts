@@ -4,6 +4,10 @@ export enum FontSize {
   BIG_BUTTON = 36,
 }
 
+export enum FontFamily {
+  MONOSPACE = '"Source Code Pro", Courier, monospace',
+}
+
 export enum Sizes {
   GraphContainerPadding = 12,
   LabelPaddingX = 5,

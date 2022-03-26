@@ -1,24 +1,23 @@
 import * as React from 'react';
+import * as Comlink from 'comlink';
 import useResizeObserver from '../../hooks/useResizeObserver';
-import FlamegraphContainer from './FlamegraphContainer';
 import {
   FlameGraphContextProvider,
   useFlameGraphNodes,
   useFlameGraphViewConfig,
 } from './FlamegraphContext';
-import FlamegraphForeground from './FlamegraphForeground';
 import {
+  CanvasRendererHandle,
   CanvasRendererProps,
   FlameCanvasRendererExports,
   FlameRawTreeNode,
 } from './types';
-import * as Comlink from 'comlink';
-import useCanvas from './useCanvas';
 
 const GRAPH_MIN_WIDTH = 240;
 
 export interface FlameGraphProps {
   data: FlameRawTreeNode;
+  isReverse?: boolean;
   ratio?: number;
   getNodeValue?: ([next, value]: [FlameRawTreeNode, number]) => number;
 }
@@ -26,25 +25,21 @@ export interface FlameGraphProps {
 const FlameGraphWrapper = (props: FlameGraphProps) => {
   const { data, ratio } = props;
   const [containerRef, rect] = useResizeObserver();
+
   return (
     <div
       ref={containerRef}
       style={{ position: 'relative', display: 'grid', width: '100%' }}
     >
-      <FlameGraphContextProvider
-        data={data}
-        ratio={ratio}
-        canvasWidth={rect.width}
-      >
-        {/* {rect.width >= GRAPH_MIN_WIDTH && <FlameGraph {...props} />} */}
-        <FlameGraph {...props} />
+      <FlameGraphContextProvider data={data} ratio={ratio} width={rect.width}>
+        {rect.width >= GRAPH_MIN_WIDTH && <FlameGraph {...props} />}
       </FlameGraphContextProvider>
     </div>
   );
 };
 
 const FlameGraph = (props: FlameGraphProps) => {
-  const { ratio, canvasWidth, canvasHeight } = useFlameGraphViewConfig();
+  const { ratio, width, height } = useFlameGraphViewConfig();
   const rendererProxyRef =
     React.useRef<Comlink.Remote<FlameCanvasRendererExports>>();
 
@@ -52,23 +47,52 @@ const FlameGraph = (props: FlameGraphProps) => {
     position: 'absolute',
     top: 0,
     left: 0,
-    width: canvasWidth,
-    height: canvasHeight,
+    width,
+    height,
   };
 
-  const { framesCanvasRef, effectCanvasRef, foregroundCanvasRef } =
+  const { framesCanvasRef, effectCanvasRef, foregroundCanvasRef, handle } =
     useRendererWorker();
+
+  const rendererHandleRef = React.useRef(handle);
+  rendererHandleRef.current = handle;
+
+  const handlePointerMove = React.useCallback((event: React.PointerEvent) => {
+    const { nativeEvent } = event;
+    const { offsetX, offsetY } = nativeEvent;
+    rendererHandleRef.current?.onPointerMove([offsetX, offsetY]);
+  }, []);
+
+  const handlePointerDown = React.useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
+      console.log(event.currentTarget.getBoundingClientRect());
+      const { nativeEvent } = event;
+      const { offsetX, offsetY } = nativeEvent;
+      rendererHandleRef.current?.onPointerDown([offsetX, offsetY]);
+    },
+    []
+  );
+
+  const handlePointerOut = React.useCallback(
+    (event: React.PointerEvent<HTMLHeadElement>) => {
+      console.log(event);
+    },
+    []
+  );
 
   return (
     <div>
-      <div>hello</div>
       <canvas ref={framesCanvasRef} style={canvasStyle} />
       <canvas ref={effectCanvasRef} style={canvasStyle} />
       <canvas ref={foregroundCanvasRef} style={canvasStyle} />
+      <div
+        style={canvasStyle}
+        onPointerMove={handlePointerMove}
+        onPointerDown={handlePointerDown}
+        onPointerOut={handlePointerOut}
+      ></div>
     </div>
   );
-
-  return <div>hello</div>;
 
   // return (
   //   <div
@@ -89,12 +113,15 @@ const FlameGraph = (props: FlameGraphProps) => {
 
 function useRendererWorker() {
   const { data } = useFlameGraphNodes();
-  const { ratio, canvasWidth, canvasHeight } = useFlameGraphViewConfig();
+  const { ratio, width, height } = useFlameGraphViewConfig();
+  const [isRenderReady, setIsRenderReady] = React.useState(false);
+  const [isInitiating, setIsInitiating] = React.useState(false);
   const framesCanvasRef = React.useRef<HTMLCanvasElement>(null);
   const effectCanvasRef = React.useRef<HTMLCanvasElement>(null);
   const foregroundCanvasRef = React.useRef<HTMLCanvasElement>(null);
   const rendererProxyRef =
     React.useRef<Comlink.Remote<FlameCanvasRendererExports>>();
+  const [handle, setHandle] = React.useState<CanvasRendererHandle>();
 
   React.useEffect(() => {
     const worker = new Worker('/client/flame.worker.js');
@@ -108,17 +135,21 @@ function useRendererWorker() {
   }, []);
 
   React.useLayoutEffect(() => {
-    if (!rendererProxyRef.current) return
+    if (!rendererProxyRef.current) return;
     rendererProxyRef.current?.updateProps({
+      data,
       ratio,
-      canvasWidth,
-      canvasHeight
-    })
-  }, [ratio, canvasWidth,canvasHeight])
+      width,
+      height,
+    });
+  }, [data, ratio, width, height]);
 
   React.useEffect(() => {
     async function effect() {
       if (
+        isRenderReady ||
+        // run transferControlToOffscreen for once, more for bug
+        isInitiating ||
         !rendererProxyRef.current ||
         !framesCanvasRef.current ||
         !effectCanvasRef.current ||
@@ -126,6 +157,7 @@ function useRendererWorker() {
       ) {
         return;
       }
+      setIsInitiating(true);
       const framesOffscreenCanvas =
         framesCanvasRef.current.transferControlToOffscreen();
       const effectOffscreenCanvas =
@@ -138,9 +170,19 @@ function useRendererWorker() {
         framesCanvas: framesOffscreenCanvas,
         effectCanvas: effectOffscreenCanvas,
         foregroundCanvas: foregroundOffscreenCanvas,
-        canvasWidth,
-        canvasHeight,
+        width,
+        height,
       };
+
+      await rendererProxyRef.current.subscribe(
+        Comlink.proxy({
+          type: 'handle',
+          cb: (handle) => {
+            setHandle(() => handle);
+          },
+        })
+      );
+
       await rendererProxyRef.current.init(
         Comlink.transfer(props, [
           framesOffscreenCanvas,
@@ -150,15 +192,17 @@ function useRendererWorker() {
       );
     }
     effect();
+    setIsRenderReady(true);
     return () => {
       // rendererProxyRef.current?.destory()
-    }
-  }, [data, ratio, canvasWidth, canvasHeight]);
+    };
+  }, [data, ratio, width, height, isRenderReady, isInitiating]);
 
   return {
     framesCanvasRef,
     effectCanvasRef,
     foregroundCanvasRef,
+    handle,
   };
 }
 

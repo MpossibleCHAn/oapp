@@ -1,116 +1,4 @@
-import * as React from 'react';
 import { FlameBaseNode } from './types';
-
-export const ELLIPSIS = '\u2026';
-
-export function useCacheMeasureTextWidth(
-  ctx: CanvasRenderingContext2D,
-  ratio: number
-): (text: string) => number | undefined {
-  const [measureTextCache] = React.useState(new Map<string, number>());
-  const prevRatio = React.useRef<number>(ratio || window.devicePixelRatio);
-
-  React.useLayoutEffect(() => {
-    if (ratio !== prevRatio.current) {
-      measureTextCache.clear();
-    }
-    prevRatio.current = ratio;
-  }, [ratio]);
-
-  return React.useCallback(
-    (text: string) => {
-      if (!measureTextCache.has(text)) {
-        measureTextCache.set(text, ctx.measureText(text).width);
-      }
-      return measureTextCache.get(text);
-    },
-    [ctx]
-  );
-}
-
-// NOTE: This blindly assumes the same result across contexts.
-const measureTextCache = new Map<string, number>();
-
-let lastDevicePixelRatio = -1;
-export function cachedMeasureTextWidth(
-  ctx: CanvasRenderingContext2D,
-  text: string
-): number {
-  if (window.devicePixelRatio !== lastDevicePixelRatio) {
-    // This cache is no longer valid!
-    measureTextCache.clear();
-    lastDevicePixelRatio = window.devicePixelRatio;
-  }
-  if (!measureTextCache.has(text)) {
-    measureTextCache.set(text, ctx.measureText(text).width);
-  }
-  return measureTextCache.get(text)!;
-}
-
-interface TrimmedTextResult {
-  trimmedString: string;
-  trimmedLength: number;
-  prefixLength: number;
-  suffixLength: number;
-  originalLength: number;
-  originalString: string;
-}
-
-// Trim text, placing an ellipsis in the middle, with a slight bias towards
-// keeping text from the beginning rather than the end
-export function buildTrimmedText(
-  text: string,
-  length: number
-): TrimmedTextResult {
-  if (text.length <= length) {
-    return {
-      trimmedString: text,
-      trimmedLength: text.length,
-      prefixLength: text.length,
-      suffixLength: 0,
-      originalString: text,
-      originalLength: text.length,
-    };
-  }
-
-  let prefixLength = Math.floor(length / 2);
-  const suffixLength = length - prefixLength - 1;
-  const prefix = text.substring(0, prefixLength);
-  const suffix = text.substring(text.length - suffixLength);
-  const trimmedString = prefix + ELLIPSIS + suffix;
-
-  return {
-    trimmedString,
-    trimmedLength: trimmedString.length,
-    prefixLength: prefix.length,
-    suffixLength: suffix.length,
-    originalString: text,
-    originalLength: text.length,
-  };
-}
-
-// Trim text to fit within the given number of pixels on the canvas
-export function trimTextMid(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number
-): TrimmedTextResult {
-  if (cachedMeasureTextWidth(ctx, text) <= maxWidth) {
-    return buildTrimmedText(text, text.length);
-  }
-  const [lo] = findValueBisect(
-    0,
-    text.length,
-    (n) => {
-      return cachedMeasureTextWidth(
-        ctx,
-        buildTrimmedText(text, n).trimmedString
-      );
-    },
-    maxWidth
-  );
-  return buildTrimmedText(text, lo);
-}
 
 // bisection algorithm
 export function findValueBisect(
@@ -121,6 +9,7 @@ export function findValueBisect(
   targetRangeSize = 1
 ): [number, number] {
   console.assert(!isNaN(targetRangeSize) && !isNaN(target));
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     if (hi - lo <= targetRangeSize) return [lo, hi];
     const mid = (hi + lo) / 2;
@@ -181,10 +70,11 @@ export type ColorTheme = keyof typeof ColorTheme;
  */
 export function generateColor(
   hash: number,
+  alpha = 1,
   subTheme: ColorTheme = Theme.HOT
 ): string {
   const fn = ColorTheme[subTheme];
-  return `rgb(${fn(hash).map(Math.round).join(',')})`;
+  return `rgb(${fn(hash).map(Math.round).join(',')},${alpha})`;
 }
 
 /**
@@ -205,8 +95,4 @@ export function countHeight(nodes: FlameBaseNode[]) {
   }
   // 因为 depth 是从 0 开始计算，故此处需要 +1 才是实际的高度
   return dfs(nodes) + 1;
-}
-
-export function minDrawWidth(ctx: CanvasRenderingContext2D) {
-  // const
 }

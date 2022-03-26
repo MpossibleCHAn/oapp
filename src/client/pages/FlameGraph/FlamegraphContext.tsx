@@ -13,8 +13,8 @@ export const FlameGraphContext =
 
 export interface FlameGraphViewConfigProps {
   ratio: number;
-  canvasWidth: number;
-  canvasHeight: number;
+  width: number;
+  height: number;
 }
 
 export const FlameGraphViewConfig =
@@ -25,7 +25,8 @@ export interface FlameGraphContextProviderProps {
   data: FlameRawTreeNode;
   /** device pixel ratio */
   ratio?: number;
-  canvasWidth: number;
+  /** canvas width */
+  width: number;
   /** canvas 实际显示的宽度（canvas 画布宽度需乘以 ratio） */
   // canvasDisplayWidth: number;
   // canvasDisplayHeight?: number;
@@ -36,13 +37,12 @@ export interface FlameGraphContextProviderProps {
 export function FlameGraphContextProvider(
   props: FlameGraphContextProviderProps
 ) {
-  const { data, canvasWidth, children } = props;
-
+  const { data, width, children } = props;
   const ratio = React.useMemo(
     () => props.ratio || window.devicePixelRatio,
     [props.ratio]
   );
-  const { nodes: logicalFlameNodes, height } = useHierarchy(data);
+  const { nodes: logicalFlameNodes, depth } = useHierarchy(data);
 
   const physicalFlameNodes = React.useMemo(() => {
     function convertLogicalToPhysicalPosition(node: FlameNode): Rect {
@@ -51,8 +51,7 @@ export function FlameGraphContextProvider(
       // const y0 = Sizes.FrameHeight * depth * ratio;
       // const x1 = canvasWidth * position[1][0] * ratio;
       // const y1 = Sizes.FrameHeight * (depth + 1) * ratio;
-      const withPaddingCanvasWidth =
-        canvasWidth - Sizes.GraphContainerPadding * 2;
+      const withPaddingCanvasWidth = width - Sizes.GraphContainerPadding * 2;
       const x0 =
         (withPaddingCanvasWidth * position[0][0] +
           Sizes.GraphContainerPadding) *
@@ -70,33 +69,23 @@ export function FlameGraphContextProvider(
         [x1, y1],
       ];
     }
-    // console.log(logicalFlameNodes);
-
     return logicalFlameNodes.map((node) => ({
       ...node,
       position: convertLogicalToPhysicalPosition(node),
     }));
-  }, [logicalFlameNodes, ratio, canvasWidth]);
+  }, [logicalFlameNodes, ratio, width]);
 
-  const canvasHeight = React.useMemo(
-    () => height * Sizes.FrameHeight + Sizes.GraphContainerPadding * 2,
-    [height]
+  const height = React.useMemo(
+    () => depth * Sizes.FrameHeight + Sizes.GraphContainerPadding * 2,
+    [depth]
   );
-
   const contextValue = React.useMemo(
-    () => ({
-      data: physicalFlameNodes,
-    }),
+    () => ({ data: physicalFlameNodes }),
     [physicalFlameNodes]
   );
-
   const viewConfig: FlameGraphViewConfigProps = React.useMemo(
-    () => ({
-      ratio,
-      canvasWidth,
-      canvasHeight,
-    }),
-    [ratio, canvasWidth, canvasHeight]
+    () => ({ ratio, width, height }),
+    [ratio, width, height]
   );
 
   return (
