@@ -5,6 +5,8 @@ function usePointer(props: CanvasRendererProps) {
   const { data, ratio } = props;
   const [selectedNode, setSelecedNode] = React.useState<FlameNode>()
   const [hoveredNode, setHoveredNode] = React.useState<FlameNode>();
+  const [isFixedMode, setIsFixedMode] = React.useState(false)
+  const [fixedNode, setFixedNode] = React.useState<FlameNode>()
   const prevHoveredNode = React.useRef<FlameNode | null>(null);
 
   const handlePointerMove = React.useCallback(
@@ -17,9 +19,9 @@ function usePointer(props: CanvasRendererProps) {
       for (const node of data) {
         const { position } = node;
         if (
-          physicalViewMouseX > position[0][0] &&
+          physicalViewMouseX >= position[0][0] &&
           physicalViewMouseX < position[1][0] &&
-          physicalViewMouseY > position[0][1] &&
+          physicalViewMouseY >= position[0][1] &&
           physicalViewMouseY < position[1][1]
         ) {
           if (
@@ -52,10 +54,16 @@ function usePointer(props: CanvasRendererProps) {
     prevHoveredNode.current = null
   }, [])
 
+  const handleContextMenu = React.useCallback(() => {
+    console.log('cccc');
+
+  }, [])
+
   return {
     handlePointerMove,
     handlePointerDown,
     handlePointerOut,
+    handleContextMenu,
     hoveredNode,
     selectedNode
   };

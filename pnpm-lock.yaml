@@ -4,6 +4,8 @@ specifiers:
   '@floating-ui/dom': ^0.4.1
   '@floating-ui/react-dom': ^0.6.0
   '@hapi/boom': ^9.1.4
+  '@iconify/icons-fluent': ^1.2.4
+  '@iconify/react': ^3.2.0
   '@types/fs-extra': ^9.0.13
   '@types/koa': ^2.13.4
   '@types/lodash': ^4.14.180
@@ -65,6 +67,8 @@ dependencies:
   twgl.js: 4.21.2
 
 devDependencies:
+  '@iconify/icons-fluent': 1.2.4
+  '@iconify/react': 3.2.0
   '@types/fs-extra': 9.0.13
   '@types/koa': 2.13.4
   '@types/lodash': 4.14.180
@@ -184,6 +188,20 @@ packages:
 
   /@humanwhocodes/object-schema/1.2.1:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
+    dev: true
+
+  /@iconify/icons-fluent/1.2.4:
+    resolution: {integrity: sha512-dVPx7nKI9Jy37Q0Z9HBPSNpm3BtH/MUuVk2u68RAFxOGICvypfgvktKyiV2yyX6zythTyJA414jRieR0HURvBw==}
+    dependencies:
+      '@iconify/types': 1.1.0
+    dev: true
+
+  /@iconify/react/3.2.0:
+    resolution: {integrity: sha512-nHmPeBGn4KKS8DwDjGrZ9SLpoMmZ+dKZ53s2msBftg6srESMWBUOMW/XBMRjnUjzwQQchguVEhhh59LSSAia/g==}
+    dev: true
+
+  /@iconify/types/1.1.0:
+    resolution: {integrity: sha512-Jh0llaK2LRXQoYsorIH8maClebsnzTcve+7U3rQUSnC11X4jtPnFuyatqFLvMxZ8MLG8dB4zfHsbPfuvxluONw==}
     dev: true
 
   /@nodelib/fs.scandir/2.1.5:

@@ -18,6 +18,7 @@ import {
   FlameCanvasRendererExports,
   FlameNode,
   FlameRawTreeNode,
+  Vec2,
 } from './types';
 import GraphTooltip from './GraphTooltip';
 
@@ -50,19 +51,16 @@ const FlameGraphWrapper = (props: FlameGraphProps) => {
 const FlameGraph = (props: FlameGraphProps) => {
   const { tooltip } = props;
   const { width, height } = useFlameGraphViewConfig();
+  const [isFiexedTooltip, setIsFixedTooltip] = React.useState(false);
+  const [fixedNode, setFixedNode] = React.useState<FlameNode>();
+  const [hoveredNode, setHoveredNode] = React.useState<FlameNode>();
   const rendererProxyRef =
     React.useRef<Comlink.Remote<FlameCanvasRendererExports>>();
-  const [hoveredNode, setHoveredNode] = React.useState<FlameNode>();
-  const prevHoveredNode = React.useRef<FlameNode>();
-  // prevHoveredNode.current = hoveredNode;
+  const interventionRef = React.useRef<HTMLDivElement>(null);
 
-  // const popoverPositionConfig = useFloating({
-  //   placement: 'right',
-  //   middleware: [shift(), offset(20), autoPlacement()],
-  // });
   const { x, y, reference, floating, strategy } = useFloating({
     placement: 'right',
-    middleware: [shift(), offset(20), autoPlacement()],
+    middleware: [shift(), offset(32), autoPlacement()],
   });
 
   const canvasStyle: React.CSSProperties = {
@@ -73,11 +71,37 @@ const FlameGraph = (props: FlameGraphProps) => {
     height,
   };
 
-  const { framesCanvasRef, effectCanvasRef, foregroundCanvasRef, handle } =
-    useRendererWorker();
+  const {
+    framesCanvasRef,
+    effectCanvasRef,
+    foregroundCanvasRef,
+    miniMapCanvasRef,
+    handle,
+  } = useRendererWorker();
 
   const rendererHandleRef = React.useRef(handle);
   rendererHandleRef.current = handle;
+
+  const handleTooltipReference = React.useCallback(
+    (position: Vec2) => {
+      const [x, y] = position;
+      reference({
+        getBoundingClientRect() {
+          return {
+            width: 0,
+            height: 0,
+            x,
+            y,
+            top: y,
+            left: x,
+            right: x,
+            bottom: y,
+          };
+        },
+      });
+    },
+    [reference]
+  );
 
   const handlePointerMove = React.useCallback(
     async (event: React.PointerEvent) => {
@@ -88,6 +112,9 @@ const FlameGraph = (props: FlameGraphProps) => {
         offsetY,
       ]);
       setHoveredNode(node);
+      if (isFiexedTooltip) {
+        return;
+      }
       // if (node && node.id !== prevHoveredNode.current?.id) {
       reference({
         getBoundingClientRect() {
@@ -106,7 +133,7 @@ const FlameGraph = (props: FlameGraphProps) => {
       // }
       // prevHoveredNode.current = node;
     },
-    [reference]
+    [isFiexedTooltip, reference]
   );
 
   const handlePointerDown = React.useCallback(
@@ -123,49 +150,85 @@ const FlameGraph = (props: FlameGraphProps) => {
 
   const handlePointerOut = React.useCallback(
     (event: React.PointerEvent<HTMLHeadElement>) => {
-      console.log(event);
+      // console.log(event);
+      rendererHandleRef.current?.onPointerOut();
     },
     []
   );
 
   const handleContextMenu = React.useCallback(
     (event: React.MouseEvent) => {
+      console.log(event);
       event.preventDefault();
-      console.log(event, hoveredNode);
+      const { clientX, clientY } = event;
+      setIsFixedTooltip((prev) =>
+        hoveredNode?.id === fixedNode?.id ? !prev : true
+      );
+      setFixedNode(hoveredNode);
+      handleTooltipReference([clientX, clientY]);
     },
-    [hoveredNode]
+    [hoveredNode, handleTooltipReference, fixedNode?.id]
   );
 
   const tooltipContent = React.useMemo(() => {
+    const node = isFiexedTooltip ? fixedNode : hoveredNode;
     if (tooltip) {
-      return tooltip(hoveredNode);
+      return tooltip(node);
     }
     return null;
-  }, [hoveredNode, tooltip]);
+  }, [fixedNode, hoveredNode, isFiexedTooltip, tooltip]);
+
+  React.useLayoutEffect(() => {
+    if (!interventionRef.current) return;
+    const target = interventionRef.current;
+    // https://developers.google.com/web/updates/2019/02/scrolling-intervention
+    function handleContainerWheel(event: WheelEvent) {
+      // ctrl + mouse wheel for zoom
+      if (event.ctrlKey) {
+        event.preventDefault();
+        const { deltaY, clientX, clientY } = event;
+        console.log(deltaY);
+        const diff = 1 - deltaY;
+        rendererHandleRef.current?.onZoom(diff, [clientX, clientY]);
+      }
+    }
+    target.addEventListener('wheel', handleContainerWheel, { passive: false });
+
+    return () => {
+      target.removeEventListener('wheel', handleContainerWheel);
+    };
+  }, []);
 
   return (
     <div>
-      <canvas ref={framesCanvasRef} style={canvasStyle} />
-      <canvas ref={effectCanvasRef} style={canvasStyle} />
-      <canvas ref={foregroundCanvasRef} style={canvasStyle} />
-      <div
-        style={canvasStyle}
-        onPointerMove={handlePointerMove}
-        onPointerDown={handlePointerDown}
-        onPointerOut={handlePointerOut}
-        onContextMenu={handleContextMenu}
-      ></div>
-      <GraphTooltip
-        floatingRef={floating}
-        node={hoveredNode}
-        style={{
-          position: strategy,
-          top: y ?? '',
-          left: x ?? '',
-        }}
-      >
-        {tooltipContent}
-      </GraphTooltip>
+      {/* <FlameMiniMap canvasRef={miniMapCanvasRef} width={width} /> */}
+      <canvas ref={miniMapCanvasRef} style={{ width, height: 100 }} />
+      <div style={{ position: 'relative' }}>
+        <canvas ref={framesCanvasRef} style={canvasStyle} />
+        <canvas ref={effectCanvasRef} style={canvasStyle} />
+        <canvas ref={foregroundCanvasRef} style={canvasStyle} />
+        <div
+          ref={interventionRef}
+          style={canvasStyle}
+          onPointerMove={handlePointerMove}
+          onPointerDown={handlePointerDown}
+          onPointerOut={handlePointerOut}
+          onContextMenu={handleContextMenu}
+        ></div>
+        <GraphTooltip
+          floatingRef={floating}
+          node={isFiexedTooltip ? fixedNode : hoveredNode}
+          isFixed={isFiexedTooltip}
+          onUnFixed={() => setIsFixedTooltip(false)}
+          style={{
+            position: strategy,
+            top: y ?? '',
+            left: x ?? '',
+          }}
+        >
+          {tooltipContent}
+        </GraphTooltip>
+      </div>
     </div>
   );
 };
@@ -178,6 +241,7 @@ function useRendererWorker() {
   const framesCanvasRef = React.useRef<HTMLCanvasElement>(null);
   const effectCanvasRef = React.useRef<HTMLCanvasElement>(null);
   const foregroundCanvasRef = React.useRef<HTMLCanvasElement>(null);
+  const miniMapCanvasRef = React.useRef<HTMLCanvasElement>(null);
   const rendererProxyRef =
     React.useRef<Comlink.Remote<FlameCanvasRendererExports>>();
   const [handle, setHandle] = React.useState<CanvasRendererHandle>();
@@ -212,7 +276,8 @@ function useRendererWorker() {
         !rendererProxyRef.current ||
         !framesCanvasRef.current ||
         !effectCanvasRef.current ||
-        !foregroundCanvasRef.current
+        !foregroundCanvasRef.current ||
+        !miniMapCanvasRef.current
       ) {
         return;
       }
@@ -223,12 +288,15 @@ function useRendererWorker() {
         effectCanvasRef.current.transferControlToOffscreen();
       const foregroundOffscreenCanvas =
         foregroundCanvasRef.current.transferControlToOffscreen();
+      const miniMapOffscreenCanvas =
+        miniMapCanvasRef.current.transferControlToOffscreen();
       const props: CanvasRendererProps = {
         data,
         ratio,
         framesCanvas: framesOffscreenCanvas,
         effectCanvas: effectOffscreenCanvas,
         foregroundCanvas: foregroundOffscreenCanvas,
+        miniMapCanvas: miniMapOffscreenCanvas,
         width,
         height,
       };
@@ -247,6 +315,7 @@ function useRendererWorker() {
           framesOffscreenCanvas,
           effectOffscreenCanvas,
           foregroundOffscreenCanvas,
+          miniMapOffscreenCanvas,
         ])
       );
     }
@@ -261,6 +330,7 @@ function useRendererWorker() {
     framesCanvasRef,
     effectCanvasRef,
     foregroundCanvasRef,
+    miniMapCanvasRef,
     handle,
   };
 }

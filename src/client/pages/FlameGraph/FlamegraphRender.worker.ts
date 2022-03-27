@@ -9,33 +9,40 @@ import { create, ReactTestRenderer } from 'react-test-renderer';
 import useRenderFrames from './useRenderFrames';
 import usePointer from './usePointer';
 import useRenderEffect from './useRenderEffect';
+import useRenderMiniMap from './useRenderMiniMap';
 
 const subscribers: Map<string, CanvasRendererSubscriber> = new Map();
 
 function Renderer(props: CanvasRendererProps) {
-  const { ratio, framesCanvas, effectCanvas, width, height } = props;
+  const { ratio, framesCanvas, effectCanvas, miniMapCanvas, width, height } =
+    props;
 
   const {
     handlePointerMove,
     handlePointerDown,
     handlePointerOut,
+    handleContextMenu,
     hoveredNode,
     selectedNode,
   } = usePointer(props);
   const renderFrames = useRenderFrames(props);
   const renderEffect = useRenderEffect(props, { hoveredNode });
+  const renderMiniMap = useRenderMiniMap(props);
 
   React.useLayoutEffect(() => {
     framesCanvas.width = width * ratio;
     framesCanvas.height = height * ratio;
     effectCanvas.width = width * ratio;
     effectCanvas.height = height * ratio;
-  }, [width, height, framesCanvas, ratio, effectCanvas]);
+    miniMapCanvas.width = width * ratio;
+  }, [width, height, framesCanvas, ratio, effectCanvas, miniMapCanvas]);
 
   const handle: CanvasRendererHandle = {
     onPointerMove: handlePointerMove,
     onPointerDown: handlePointerDown,
     onPointerOut: handlePointerOut,
+    onContextMenu: handleContextMenu,
+    onZoom: (diff, pos) => console.log(diff, pos)
   };
 
   const handleRef = React.useRef(handle);
@@ -43,11 +50,12 @@ function Renderer(props: CanvasRendererProps) {
 
   const stableHandle = React.useMemo(() => {
     console.log('stableHandle');
-
     const value: CanvasRendererHandle = {
       onPointerMove: (position) => handleRef.current.onPointerMove(position),
       onPointerDown: (position) => handleRef.current.onPointerDown(position),
       onPointerOut: () => handleRef.current.onPointerOut(),
+      onContextMenu: () => handleRef.current.onContextMenu(),
+      onZoom: (diff, position) => handleRef.current.onZoom(diff, position)
     };
     return value;
   }, []);
@@ -82,6 +90,10 @@ function Renderer(props: CanvasRendererProps) {
   React.useEffect(() => {
     renderEffect();
   }, [renderEffect]);
+
+  React.useLayoutEffect(() => {
+    renderMiniMap();
+  }, [renderMiniMap]);
 
   return null;
 }

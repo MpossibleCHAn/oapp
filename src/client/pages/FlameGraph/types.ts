@@ -49,6 +49,8 @@ export interface CanvasRendererProps {
   effectCanvas: OffscreenCanvas;
   /** mouse event layer */
   foregroundCanvas: OffscreenCanvas;
+  /** mini map canvas */
+  miniMapCanvas: OffscreenCanvas
 
   /** device pixel ratio */
   ratio: number;
@@ -62,6 +64,8 @@ export interface CanvasRendererHandle {
   onPointerMove: (position: Vec2) => FlameNode | undefined
   onPointerDown: (position: Vec2) => FlameNode | undefined
   onPointerOut: () => void
+  onContextMenu: () => void
+  onZoom: (diff: number, position: Vec2) => void
 }
 
 export type CanvasRendererSubscriber = {
