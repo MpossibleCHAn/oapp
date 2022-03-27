@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { FlameBaseNode } from './types';
 
 // bisection algorithm
@@ -95,4 +96,39 @@ export function countHeight(nodes: FlameBaseNode[]) {
   }
   // 因为 depth 是从 0 开始计算，故此处需要 +1 才是实际的高度
   return dfs(nodes) + 1;
+}
+
+/**
+ * Converts a React node to an element: non-empty string or number or
+ * `React.Fragment` (React 16.3+) is wrapped in given tag name; empty strings
+ * and booleans are discarded.
+ *
+ * @see
+ * https://github.com/palantir/blueprint/blob/c65072827a79c3f52f5d9037f6fd42f3160d2f9f/packages/core/src/common/utils/reactUtils.ts#L50
+ */
+export function ensureElement(
+  child: React.ReactNode | undefined,
+  tagName: keyof JSX.IntrinsicElements = "span"
+): (React.ReactElement & { ref: unknown }) | undefined {
+  if (child == null || typeof child === "boolean") {
+    return undefined;
+  } else if (typeof child === "string") {
+    // cull whitespace strings
+    return child.trim().length > 0
+      ? React.createElement(tagName, {}, child)
+      : undefined;
+  } else if (
+    typeof child === "number" ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof (child as any).type === "symbol" ||
+    Array.isArray(child)
+  ) {
+    // React.Fragment has a symbol type, ReactNodeArray extends from Array
+    return React.createElement(tagName, {}, child);
+  } else if (React.isValidElement(child)) {
+    return child as React.ReactElement & { ref: unknown };
+  } else {
+    // child is inferred as {}
+    return undefined;
+  }
 }

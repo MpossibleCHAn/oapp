@@ -4,7 +4,7 @@ import { CanvasRendererProps, FlameNode } from './types';
 import { Color, FontSize, Sizes } from './style';
 
 export const ELLIPSIS = '\u2026';
-const FONT_FAMILY = 'Roboto Mono';
+const FONT_FAMILY = '"Source Code Pro", monospace, "system-ui"';
 const MIN_FRAME_TO_RENDER = 8;
 
 function useDrawText(
@@ -52,8 +52,8 @@ function useDrawText(
         beforeDraw(ctx, node);
       }
       const trimedText = trimTextMid(name, frameWidth);
-      // ctx.font = `800 ${FontSize.LABEL * ratio}px "Mono" Roboto`;
-      ctx.font = `400 ${FontSize.LABEL * ratio}px ${FONT_FAMILY}`;
+      ctx.font = `${FontSize.LABEL * ratio}px ${FONT_FAMILY}`;
+
       ctx.fillStyle = Color.Label;
       ctx.fillText(
         trimedText.trimmedString,

@@ -3,7 +3,8 @@ import { CanvasRendererProps, Vec2, FlameNode } from './types';
 
 function usePointer(props: CanvasRendererProps) {
   const { data, ratio } = props;
-  const [hoveredNode, setHoveredNode] = React.useState<FlameNode | null>(null);
+  const [selectedNode, setSelecedNode] = React.useState<FlameNode>()
+  const [hoveredNode, setHoveredNode] = React.useState<FlameNode>();
   const prevHoveredNode = React.useRef<FlameNode | null>(null);
 
   const handlePointerMove = React.useCallback(
@@ -11,6 +12,7 @@ function usePointer(props: CanvasRendererProps) {
       const [x, y] = position;
       const physicalViewMouseX = x * ratio;
       const physicalViewMouseY = y * ratio;
+      let matchNode;
       let isMatch = false;
       for (const node of data) {
         const { position } = node;
@@ -27,14 +29,16 @@ function usePointer(props: CanvasRendererProps) {
             setHoveredNode(node);
             prevHoveredNode.current = node;
           }
+          matchNode = node
           isMatch = true;
           break;
         }
       }
       if (!isMatch) {
-        setHoveredNode(null);
+        setHoveredNode(undefined);
         prevHoveredNode.current = null;
       }
+      return matchNode
     },
     [data, ratio]
   );
@@ -44,7 +48,7 @@ function usePointer(props: CanvasRendererProps) {
   }, [hoveredNode])
 
   const handlePointerOut = React.useCallback(() => {
-    setHoveredNode(null)
+    setHoveredNode(undefined)
     prevHoveredNode.current = null
   }, [])
 
@@ -53,6 +57,7 @@ function usePointer(props: CanvasRendererProps) {
     handlePointerDown,
     handlePointerOut,
     hoveredNode,
+    selectedNode
   };
 }
 

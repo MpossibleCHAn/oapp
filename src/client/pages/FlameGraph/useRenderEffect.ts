@@ -4,7 +4,7 @@ import { CanvasRendererProps, FlameNode } from './types';
 function useRenderEffect(
   props: CanvasRendererProps,
   options: {
-    hoveredNode: FlameNode | null;
+    hoveredNode: FlameNode | undefined;
   }
 ) {
   const { effectCanvas, ratio } = props;
@@ -13,7 +13,7 @@ function useRenderEffect(
     () => effectCanvas.getContext('2d'),
     [effectCanvas]
   );
-  const prevHoveredNode = React.useRef<FlameNode | null>(null);
+  const prevHoveredNode = React.useRef<FlameNode>();
 
   React.useEffect(() => {
     prevHoveredNode.current = hoveredNode;

@@ -15,8 +15,13 @@ const subscribers: Map<string, CanvasRendererSubscriber> = new Map();
 function Renderer(props: CanvasRendererProps) {
   const { ratio, framesCanvas, effectCanvas, width, height } = props;
 
-  const { handlePointerMove, handlePointerDown, handlePointerOut, hoveredNode } =
-    usePointer(props);
+  const {
+    handlePointerMove,
+    handlePointerDown,
+    handlePointerOut,
+    hoveredNode,
+    selectedNode,
+  } = usePointer(props);
   const renderFrames = useRenderFrames(props);
   const renderEffect = useRenderEffect(props, { hoveredNode });
 
@@ -30,7 +35,7 @@ function Renderer(props: CanvasRendererProps) {
   const handle: CanvasRendererHandle = {
     onPointerMove: handlePointerMove,
     onPointerDown: handlePointerDown,
-    onPointerOut: handlePointerOut
+    onPointerOut: handlePointerOut,
   };
 
   const handleRef = React.useRef(handle);
@@ -42,7 +47,7 @@ function Renderer(props: CanvasRendererProps) {
     const value: CanvasRendererHandle = {
       onPointerMove: (position) => handleRef.current.onPointerMove(position),
       onPointerDown: (position) => handleRef.current.onPointerDown(position),
-      onPointerOut: () => handleRef.current.onPointerOut()
+      onPointerOut: () => handleRef.current.onPointerOut(),
     };
     return value;
   }, []);

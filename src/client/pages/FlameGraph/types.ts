@@ -50,17 +50,17 @@ export interface CanvasRendererProps {
   /** mouse event layer */
   foregroundCanvas: OffscreenCanvas;
 
+  /** device pixel ratio */
   ratio: number;
+  /** canvas width */
   width: number;
+  /** canvas height */
   height: number;
-  /** canvas 实际显示的宽度（canvas 画布宽度需乘以 ratio） */
-  // canvasDisplayWidth: number;
-  // canvasDisplayHeight: number;
 }
 
 export interface CanvasRendererHandle {
-  onPointerMove: (position: Vec2) => void
-  onPointerDown: (position: Vec2) => void
+  onPointerMove: (position: Vec2) => FlameNode | undefined
+  onPointerDown: (position: Vec2) => FlameNode | undefined
   onPointerOut: () => void
 }
 
